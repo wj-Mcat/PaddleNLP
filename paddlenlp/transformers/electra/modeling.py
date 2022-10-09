@@ -199,22 +199,33 @@ class ElectraEmbeddings(nn.Layer):
         self.layer_norm = nn.LayerNorm(embedding_size, epsilon=layer_norm_eps)
         self.dropout = nn.Dropout(hidden_dropout_prob)
 
-    def forward(self, input_ids, token_type_ids=None, position_ids=None):
+    def forward(self,
+                input_ids: Tensor,
+                token_type_ids: Optional[Tensor] = None,
+                position_ids: Optional[Tensor] = None,
+                inputs_embeds: Optional[Tensor] = None,
+                past_key_values_length: Optional[int] = None):
+
         if position_ids is None:
             ones = paddle.ones_like(input_ids, dtype="int64")
             seq_length = paddle.cumsum(ones, axis=-1)
             position_ids = seq_length - ones
+
+            if past_key_values_length is not None:
+                position_ids += past_key_values_length
+
             position_ids.stop_gradient = True
         position_ids = position_ids.astype("int64")
 
         if token_type_ids is None:
             token_type_ids = paddle.zeros_like(input_ids, dtype="int64")
 
-        input_embeddings = self.word_embeddings(input_ids)
+        if inputs_embeds is None:
+            inputs_embeds = self.word_embeddings(input_ids)
         position_embeddings = self.position_embeddings(position_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
-        embeddings = input_embeddings + position_embeddings + token_type_embeddings
+        embeddings = inputs_embeds + position_embeddings + token_type_embeddings
 
         embeddings = self.layer_norm(embeddings)
         embeddings = self.dropout(embeddings)
@@ -546,10 +557,13 @@ class ElectraModel(ElectraPretrainedModel):
         self.embeddings.word_embeddings = value
 
     def forward(self,
-                input_ids,
-                token_type_ids=None,
-                position_ids=None,
-                attention_mask=None,
+                input_ids: Tensor,
+                token_type_ids: Optional[Tensor] = None,
+                position_ids: Optional[Tensor] = None,
+                attention_mask: Optional[Tensor] = None,
+                inputs_embeds: Optional[Tensor] = None,
+                past_key_values: Optional[Tuple[Tuple[Tensor]]] = None,
+                use_cache: Optional[Tensor] = None,
                 output_attentions=False,
                 output_hidden_states=False,
                 return_dict=False):
@@ -585,6 +599,16 @@ class ElectraModel(ElectraPretrainedModel):
                 When the data type is float, the `masked` tokens have `-INF` values and the others have `0` values.
                 It is a tensor with shape broadcasted to `[batch_size, num_attention_heads, sequence_length, sequence_length]`.
                 Defaults to `None`, which means nothing needed to be prevented attention to.
+            past_key_values (tuple(tuple(Tensor)), optional):
+                The length of tuple equals to the number of layers, and each inner
+                tuple haves 4 tensors of shape `(batch_size, num_heads, sequence_length - 1, embed_size_per_head)`)
+                which contains precomputed key and value hidden states of the attention blocks.
+                If `past_key_values` are used, the user can optionally input only the last `input_ids` (those that
+                don't have their past key value states given to this model) of shape `(batch_size, 1)` instead of all
+                `input_ids` of shape `(batch_size, sequence_length)`.
+            use_cache (`bool`, optional):
+                If set to `True`, `past_key_values` key value states are returned.
+                Defaults to `None`.
             output_hidden_states (bool, optional):
                 Whether to return the hidden states of all layers.
                 Defaults to `False`.
@@ -625,7 +649,8 @@ class ElectraModel(ElectraPretrainedModel):
 
         embedding_output = self.embeddings(input_ids=input_ids,
                                            position_ids=position_ids,
-                                           token_type_ids=token_type_ids)
+                                           token_type_ids=token_type_ids,
+                                           inputs_embeds=inputs_embeds)
 
         if hasattr(self, "embeddings_project"):
             embedding_output = self.embeddings_project(embedding_output)
@@ -659,10 +684,10 @@ class ElectraDiscriminator(ElectraPretrainedModel):
         self.init_weights()
 
     def forward(self,
-                input_ids,
-                token_type_ids=None,
-                position_ids=None,
-                attention_mask=None):
+                input_ids: Optional[Tensor],
+                token_type_ids: Optional[Tensor] = None,
+                position_ids: Optional[Tensor] = None,
+                attention_mask: Optional[Tensor] = None):
         r"""
 
         Args:
@@ -1345,7 +1370,8 @@ class ElectraForTotalPretraining(ElectraPretrainedModel):
             #uniform_noise = paddle.uniform(logits.shape, dtype="float32", min=0, max=1)
             uniform_noise = paddle.rand(logits.shape,
                                         dtype=paddle.get_default_dtype())
-            gumbel_noise = -paddle.log(-paddle.log(uniform_noise + 1e-9) + 1e-9)
+            gumbel_noise = - \
+                paddle.log(-paddle.log(uniform_noise + 1e-9) + 1e-9)
         else:
             gumbel_noise = paddle.zeros_like(logits)
         # softmax_sample equal to sampled_tokids.unsqueeze(-1)
@@ -2004,7 +2030,7 @@ class ElectraForQuestionAnswering(ElectraPretrainedModel):
     Args:
         electra (:class:`ElectraModel`):
             An instance of ElectraModel.
-            
+
     """
 
     def __init__(self, electra):
