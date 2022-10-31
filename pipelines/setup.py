@@ -13,24 +13,27 @@
 # limitations under the License.
 import os
 import setuptools
-import sys
-import io
-import pipelines
 
 description = "Paddle-Pipelines: An End to End Natural Language Proceessing Development Kit Based on PaddleNLP"
 
-with open("requirements.txt") as fin:
-    REQUIRED_PACKAGES = fin.read()
+
+def read(file: str):
+    """read the content of file"""
+    current_dir = os.path.dirname(__file__)
+    path = os.path.join(current_dir, file)
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read().strip()
+    return content
 
 
-def read(*names, **kwargs):
-    with io.open(os.path.join(os.path.dirname(__file__), *names),
-                 encoding=kwargs.get("encoding", "utf8")) as fp:
-        return fp.read()
+def read_requirements():
+    content = read('requirements.txt')
+    packages = content.split("\n")
+    return packages
 
 
 setuptools.setup(name="paddle-pipelines",
-                 version=pipelines.__version__,
+                 version=read("VERSION"),
                  author="PaddlePaddle Speech and Language Team",
                  author_email="paddlenlp@baidu.com",
                  description=description,
@@ -42,7 +45,7 @@ setuptools.setup(name="paddle-pipelines",
                      exclude=('examples*', 'tests*', 'docs*', 'ui*',
                               'rest_api*')),
                  setup_requires=['cython', 'numpy'],
-                 install_requires=REQUIRED_PACKAGES,
+                 install_requires=read_requirements(),
                  python_requires='>=3.7',
                  classifiers=[
                      'Programming Language :: Python :: 3',

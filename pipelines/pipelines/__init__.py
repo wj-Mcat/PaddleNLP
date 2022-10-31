@@ -12,8 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from .version import VERSION
 
-__version__ = '0.1.0a0'  # Maybe dev is better
+__version__ = VERSION
 
 from typing import Union
 from types import ModuleType
