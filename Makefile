@@ -48,3 +48,7 @@ deploy-pipelines:
 .PHONY: install-pipelines
 install-pipelines:
 	cd pipelines && make install
+
+.PHONY: format
+format:
+	pre-commit run yapf
