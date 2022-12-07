@@ -840,8 +840,10 @@ class PretrainedConfig:
             [`PretrainedConfig`]: The configuration object instantiated from those parameters.
         """
         return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
+
         # Those arguments may be passed along for our internal telemetry.
         # We remove them so they don't appear in `return_unused_kwargs`.
+        config_dict = convert_to_legacy_config(cls.standard_config_map, config_dict)
 
         config = cls(**config_dict)
 

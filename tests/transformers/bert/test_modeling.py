@@ -34,7 +34,6 @@ from paddlenlp.transformers import (
     BertForSequenceClassification,
     BertForTokenClassification,
     BertModel,
-    BertPretrainedModel,
 )
 from paddlenlp.transformers.bert.configuration import BertConfig
 from paddlenlp.transformers.model_utils import PretrainedModel
@@ -42,7 +41,12 @@ from paddlenlp.utils import install_package, uninstall_package
 
 from ...testing_utils import slow
 from ..test_configuration_common import ConfigTester
-from ..test_modeling_common import ModelTesterMixin, ModelTesterPretrainedMixin, ids_tensor, random_attention_mask
+from ..test_modeling_common import (
+    ModelTesterMixin,
+    ModelTesterPretrainedMixin,
+    ids_tensor,
+    random_attention_mask,
+)
 
 
 class BertModelTester:
@@ -607,6 +611,7 @@ class BertModelIntegrationTest(ModelTesterPretrainedMixin, unittest.TestCase):
     @slow
     def test_inference_with_attention(self):
         model = BertModel.from_pretrained("bert-base-uncased")
+        self.assertFalse()
         model.eval()
         input_ids = paddle.to_tensor([[0, 345, 232, 328, 740, 140, 1695, 69, 6078, 1588, 2]])
         attention_mask = paddle.to_tensor([[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
