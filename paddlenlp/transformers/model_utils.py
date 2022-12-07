@@ -200,7 +200,10 @@ class PretrainedModel(Layer, GenerationMixin):
     by which subclasses can track arguments for initialization automatically.
     """
 
+    # Deprecated(wj-Mcat): after 2.6.* version
+    # save the old `model_config_file` info, and will be removed after 2.6.* version
     model_config_file = "model_config.json"
+
     pretrained_init_configuration = {}
     # TODO: more flexible resource handle, namedtuple with fields as:
     # resource_name, saved_file, handle_name_for_load(None for used as __init__
@@ -1128,7 +1131,7 @@ class PretrainedModel(Layer, GenerationMixin):
         return model_to_load, missing_keys, unexpected_keys, mismatched_keys
 
     @classmethod
-    def from_pretrained_v2(cls, pretrained_model_name_or_path, *args, **kwargs):
+    def from_pretrained_v2(cls, pretrained_model_name_or_path, from_hf_hub: bool = False, *args, **kwargs):
         """
         Creates an instance of `PretrainedModel`. Model weights are loaded
         by specifying name of a built-in pretrained model, a pretrained model from HF Hub, a community contributed model,
@@ -1143,6 +1146,7 @@ class PretrainedModel(Layer, GenerationMixin):
                 - Name of a community-contributed pretrained model.
                 - Local directory path which contains model weights file("model_state.pdparams")
                   and model config file ("model_config.json").
+            from_hf_hub (bool): load model from huggingface hub. Default to `False`.
             *args (tuple): Position arguments for model `__init__`. If provided,
                 use these as position argument values for model initialization.
             **kwargs (dict): Keyword arguments for model `__init__`. If provided,

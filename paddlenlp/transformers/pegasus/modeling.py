@@ -13,15 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 import math
-import numpy as np
+from typing import Dict
 
+import numpy as np
 import paddle
 import paddle.nn as nn
-import paddle.nn.functional as F
-import paddle.tensor as tensor
-from paddle.nn import Layer, Embedding
+from paddle.nn import Embedding
 
 from .. import PretrainedModel, register_base_model
 
@@ -61,6 +59,11 @@ class PegasusPretrainedModel(PretrainedModel):
     pretrained_init_configuration = {}
     pretrained_resource_files_map = {}
     base_model_prefix = "pegasus"
+
+    standard_config_map: Dict[str, str] = {
+        "num_encoder_layers": "encoder_layers",
+        "num_decoder_layers": "decoder_layers",
+    }
 
     def init_weights(self, layer):
         """Initialization hook"""
