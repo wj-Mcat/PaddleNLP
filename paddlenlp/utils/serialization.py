@@ -87,8 +87,12 @@ class UnpicklerWrapperStage(pickle.Unpickler):
                 return StorageType(name)
             except KeyError:
                 pass
+
+        # pure torch tensor builder
         if mod_name == "torch._utils":
             return _rebuild_tensor_stage
+
+        # pytorch_lightning tensor builder
         if mod_name == "pytorch_lightning":
             return dumpy
         return super().find_class(mod_name, name)
@@ -121,7 +125,7 @@ def dumpy(*args, **kwarsg):
     return None
 
 
-def read_index(file_handler: BufferedReader, words: str, file_size: int) -> int:
+def seek_by_string(file_handler: BufferedReader, words: str, file_size: int) -> int:
     word_index = 0
     word_bytes = words.encode("latin")
     empty_byte = "".encode("latin")
@@ -140,7 +144,7 @@ def read_index(file_handler: BufferedReader, words: str, file_size: int) -> int:
 
 
 def read_prefix_key(file_handler: BufferedReader, end_index):
-    end_index = read_index(file_handler, "data.pkl", end_index)
+    end_index = seek_by_string(file_handler, "data.pkl", end_index)
     file_handler.seek(MZ_ZIP_LOCAL_DIR_HEADER_SIZE)
     prefix_key = file_handler.read(end_index - MZ_ZIP_LOCAL_DIR_HEADER_SIZE - len("/data.pkl"))
     return prefix_key
@@ -203,7 +207,7 @@ def load_torch(path: str, **pickle_load_args):
             key = tensor_meta.key
             # eg: archive/data/1FB
             filename = f"{prefix_key}/data/{key}"
-            read_index(file_handler, filename, content_size)
+            seek_by_string(file_handler, filename, content_size)
             file_handler.seek(2, 1)
 
             padding_offset = np.frombuffer(file_handler.read(2)[:1], dtype=np.uint8)[0]
